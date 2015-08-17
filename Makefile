@@ -20,7 +20,7 @@ endif
 all: pep8 test run
 
 env:
-	virtualenv env
+	bash ./scripts/setup.sh
 
 main-deps: env
 	env/bin/pip install -r requirements.txt
