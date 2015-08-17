@@ -22,7 +22,7 @@ class TestAPI(unittest.TestCase):
     def setUp(self):
         self.web_root = FibonacciServerResource(FibonacciGenerator())
         self.site = Site(self.web_root)
-        self.server = reactor.listenTCP(8000, self.site);
+        self.server = reactor.listenTCP(8000, self.site)
 
     def tearDown(self):
         return self.server.stopListening()
