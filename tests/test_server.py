@@ -1,8 +1,8 @@
 import json
-import unittest
 
 from hamcrest import *
 
+from twisted.trial import unittest
 from twisted.web.resource import Resource
 from twisted.web.server import Request, Site
 from twisted.web.http import StringTransport

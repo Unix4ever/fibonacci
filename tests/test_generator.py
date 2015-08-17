@@ -1,10 +1,10 @@
 import time
-import unittest
 
 from hamcrest import *
 from flexmock import flexmock
 from functools import partial
 
+from twisted.trial import unittest
 from twisted.internet import reactor, defer, task
 
 from fibonacci.fibonacci import FibonacciGenerator
@@ -43,8 +43,6 @@ class TestGenerator(unittest.TestCase):
     def test_parallel_requests(self):
         """
         Check how generator handles several parallel requests
-        And when one request is slow, other should be still processed
-        E.g. check if GIL occurs or not
         """
 
         def validate(res, count):
