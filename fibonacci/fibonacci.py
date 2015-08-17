@@ -103,7 +103,9 @@ class FibonacciServerResource(APIResource):
         def write_response(result):
             request.setHeader("Content-Type", "application/json")
             request.write(''.join(["[", ",".join(result), "]"]))
-            request.finish()
+
+            if not request._disconnected:
+                request.finish()
 
         self.fibonacci_generator.fetch(limit).addCallback(write_response)
         return server.NOT_DONE_YET

@@ -2,11 +2,13 @@ import json
 
 from hamcrest import *
 
+from flexmock import flexmock
+
+from twisted.python import log, failure
 from twisted.trial import unittest
-from twisted.web.resource import Resource
-from twisted.web.server import Request, Site
-from twisted.web.http import StringTransport
-from twisted.protocols.basic import LineReceiver
+from twisted.internet import defer, reactor
+from twisted.web.server import Site
+from twisted.web.client import getPage
 
 from fibonacci.fibonacci import FibonacciServerResource, FibonacciGenerator
 
@@ -20,27 +22,10 @@ class TestAPI(unittest.TestCase):
     def setUp(self):
         self.web_root = FibonacciServerResource(FibonacciGenerator())
         self.site = Site(self.web_root)
+        self.server = reactor.listenTCP(8000, self.site);
 
-    def request(self, method, uri, **kwargs):
-        req = Request(LineReceiver(), True)
-        req.transport = StringTransport()
-        req.method = method
-        req.uri = uri
-        req.path = uri
-        req.args = kwargs
-        req.clientproto = 'HTTP/1.1'
-        req.prepath = []
-        req.postpath = uri.split('/')[1:]
-        return req
-
-    def render(self, req):
-        resource = self.site.getResourceFor(req)
-        req.render(resource)
-        resp = req.transport.getvalue().split('\r\n\r\n')
-        return {
-            "headers": resp[0],
-            "content": resp[1],
-        }
+    def tearDown(self):
+        return self.server.stopListening()
 
     def test_sequence_api(self):
         """
@@ -49,28 +34,21 @@ class TestAPI(unittest.TestCase):
         2. Pass limit as string
         3. Do not pass the limit at all
         """
-        def check_responce(res, content, code):
-            assert_that(res["headers"], contains_string(str(code)))
-            if content:
-                assert_that(res["content"], equal_to(content))
-            return res
+        def check_params(method, uri, params, content, code):
+            def check_response(res):
+                if isinstance(res, failure.Failure):
+                    assert_that(res.value.status, equal_to(str(code)))
+                    assert_that(res.value.response, contains_string(content))
+                else:
+                    assert_that(res, contains_string(content))
 
-        check_responce(self.render(self.request("GET", "/sequence")),
-                       "limit param missing",
-                       400)
+            d = getPage("http://localhost:8000%s?%s" % (uri, "&".join(["%s=%s" % (key, value) for key, value in params.iteritems()])))
+            return d.addBoth(check_response)
 
-        check_responce(self.render(self.request("GET", "/sequence", limit=["nope"])),
-                       "limit should be an integer",
-                       400)
-
-        check_responce(self.render(self.request("GET", "/sequence", limit=[-1])),
-                       "limit value must be a positive number",
-                       400)
-
-        check_responce(self.render(self.request("GET", "/sequence", limit=[0])),
-                       "limit value must be a positive number",
-                       400)
-
-        res = check_responce(self.render(self.request("GET", "/sequence", limit=[5])), None, 200)
-
-        assert_that(res['content'].strip(), contains_string("[0,1,1,2,3]"))
+        cases = (
+            ("GET", "/sequence", {}, "limit param missing", 400),
+            ("GET", "/sequence", dict(limit="nope"), "limit should be an integer", 400),
+            ("GET", "/sequence", dict(limit=-1), "limit value must be a positive number", 400),
+            ("GET", "/sequence", dict(limit=5), "[0,1,1,2,3]", 200),
+        )
+        return defer.DeferredList([check_params(*args) for args in cases], fireOnOneErrback=True)
