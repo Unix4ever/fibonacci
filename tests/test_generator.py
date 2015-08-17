@@ -15,10 +15,6 @@ class TestGenerator(unittest.TestCase):
     Unit tests for fibonacci generator
     """
 
-    # Testcases:
-    # 1. Invalid cache
-    # 2. Calling self.generator several times in parallel
-
     def setUp(self):
         self.generator = FibonacciGenerator()
         self.sequence = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765, 10946, 17711, 28657, 46368, 75025, 121393, 196418, 317811, 514229]

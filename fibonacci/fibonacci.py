@@ -30,10 +30,6 @@ class FibonacciIterator(object):
 
 
 class FibonacciGenerator(object):
-    """
-    Lazy fibonacci sequence generator
-    Uses local file cache to speed up subsequent fibonacci sequence fetch calls
-    """
 
     CACHE_INDEX = ".cache_index"
     CACHE_FILE = ".cache_file"
